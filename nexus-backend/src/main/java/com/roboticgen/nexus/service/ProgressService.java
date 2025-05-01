@@ -1,0 +1,86 @@
+package com.roboticgen.nexus.service;
+
+import com.roboticgen.nexus.dto.*;
+import com.roboticgen.nexus.exception.ResourceNotFoundException;
+import com.roboticgen.nexus.model.Progress;
+import com.roboticgen.nexus.model.Task;
+import com.roboticgen.nexus.model.User;
+import com.roboticgen.nexus.repository.ProgressRepository;
+import com.roboticgen.nexus.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class ProgressService {
+
+    private final ProgressRepository progressRepository;
+    private final UserRepository userRepository;
+
+    public ProgressResponse createProgress(ProgressRequest request) {
+        User user = getCurrentUser();
+
+        Progress progress = Progress.builder()
+            .processName(request.getProcessName())
+            .category(request.getCategory())
+            .startDate(request.getStartDate())
+            .user(user)
+            .build();
+
+        // attach tasks
+        for (TaskRequest t : request.getTasks()) {
+            Task task = Task.builder()
+                .name(t.getName())
+                .days(t.getDays())
+                .completed(false)
+                .progress(progress)
+                .build();
+            progress.getTasks().add(task);
+        }
+
+        Progress saved = progressRepository.save(progress);
+        return mapToResponse(saved);
+    }
+
+    public List<ProgressResponse> getUserProgress() {
+        User user = getCurrentUser();
+        return progressRepository.findAllByUser(user).stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    private ProgressResponse mapToResponse(Progress p) {
+        ProgressResponse dto = new ProgressResponse();
+        dto.setId(p.getId());
+        dto.setProcessName(p.getProcessName());
+        dto.setCategory(p.getCategory());
+        dto.setStartDate(p.getStartDate());
+        dto.setTasks(
+            p.getTasks().stream().map(task -> {
+                TaskResponse tr = new TaskResponse();
+                tr.setId(task.getId());
+                tr.setName(task.getName());
+                tr.setDays(task.getDays());
+                tr.setCompleted(task.isCompleted());
+                return tr;
+            }).collect(Collectors.toList())
+        );
+        return dto;
+    }
+
+    private User getCurrentUser() {
+        String username = ((UserDetails) SecurityContextHolder
+            .getContext()
+            .getAuthentication()
+            .getPrincipal())
+            .getUsername();
+
+        return userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+    }
+}

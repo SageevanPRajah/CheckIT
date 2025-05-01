@@ -17,7 +17,8 @@ export default function CreateCoursePage() {
         try {
             await authFetch('/courses', {
                 method: 'POST',
-                body: JSON.stringify({ title, description }),
+                // authFetch will JSON.stringify for us
+                body: { title, description },
             })
             router.push('/courses')
         } catch (err: any) {
