@@ -2,6 +2,7 @@ package com.roboticgen.nexus.service;
 
 import com.roboticgen.nexus.dto.*;
 import com.roboticgen.nexus.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import com.roboticgen.nexus.model.Progress;
 import com.roboticgen.nexus.model.Task;
 import com.roboticgen.nexus.model.User;
@@ -46,6 +47,63 @@ public class ProgressService {
         Progress saved = progressRepository.save(progress);
         return mapToResponse(saved);
     }
+
+     /**
+     * Load one Progress by ID (throws if not found or not owned by current user).
+     */
+    public ProgressResponse getProgressById(Long id) {
+        Progress p = progressRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Progress", "id", id));
+ 
+        User me = getCurrentUser();
+        if (!p.getUser().getId().equals(me.getId())) {
+            throw new AccessDeniedException("You do not have permission to view this resource");
+        }
+ 
+        return mapToResponse(p);
+    }
+
+    public ProgressResponse updateProgress(Long id, ProgressRequest request) {
+                 User me = getCurrentUser();
+                 Progress prog = progressRepository.findById(id)
+                     .orElseThrow(() -> new ResourceNotFoundException("Progress", "id", id));
+         
+                 if (!prog.getUser().getId().equals(me.getId())) {
+                     throw new AccessDeniedException("Not allowed to edit this");
+                 }
+         
+                 // overwrite fields
+                 prog.setProcessName(request.getProcessName());
+                 prog.setCategory(request.getCategory());
+                 prog.setStartDate(request.getStartDate());
+         
+                 // rebuild tasks
+                 prog.getTasks().clear();
+                 for (TaskRequest t : request.getTasks()) {
+                     Task task = Task.builder()
+                         .name(t.getName())
+                         .days(t.getDays())
+                         .completed(false)
+                         .progress(prog)
+                         .build();
+                     prog.getTasks().add(task);
+                 }
+         
+                 Progress saved = progressRepository.save(prog);
+                 return mapToResponse(saved);
+             }
+         
+             public void deleteProgress(Long id) {
+                 User me = getCurrentUser();
+                 Progress prog = progressRepository.findById(id)
+                     .orElseThrow(() -> new ResourceNotFoundException("Progress", "id", id));
+         
+                 if (!prog.getUser().getId().equals(me.getId())) {
+                     throw new AccessDeniedException("Not allowed to delete this");
+                 }
+         
+                 progressRepository.delete(prog);
+             }
 
     public List<ProgressResponse> getUserProgress() {
         User user = getCurrentUser();

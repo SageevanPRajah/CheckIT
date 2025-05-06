@@ -4,13 +4,29 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authFetch } from '@/lib/api'
 
-export default function ProcessForm() {
-  const router = useRouter()
-  const [processName, setProcessName] = useState('')
-  const [category, setCategory] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [tasks, setTasks] = useState([{ name: '', days: '' }])
-  const [error, setError] = useState('')
+// the shape of the data the form works with
+export type FormValues = {
+    processName: string
+    category:    string
+    startDate:   string
+    tasks:       { name: string; days: string }[]
+  }
+  
+  interface ProcessFormProps {
+    initialData?: FormValues
+    onSubmit?: (formVals: FormValues) => Promise<void>
+  }
+
+  export default function ProcessForm({ initialData, onSubmit }: ProcessFormProps) {
+    const router = useRouter()
+    // initialize from props or empty
+    const [processName, setProcessName] = useState(initialData?.processName || '')
+    const [category,    setCategory]    = useState(initialData?.category || '')
+    const [startDate,   setStartDate]   = useState(initialData?.startDate || '')
+    const [tasks, setTasks] = useState<FormValues['tasks']>(
+      initialData?.tasks || [{ name: '', days: '' }]
+    )
+    const [error, setError] = useState('')
 
   const addTask = () => setTasks(ts => [...ts, { name: '', days: '' }])
   const removeTask = (idx: number) =>
@@ -27,26 +43,37 @@ export default function ProcessForm() {
     e.preventDefault()
     setError('')
 
+    // collect all values into formVals
+   const formVals: FormValues = {
+       processName,
+       category,
+       startDate,
+       tasks,
+     }
+
     try {
-      await authFetch('/progress', {
-        method: 'POST',
-        // send a JS object and let authFetch handle JSON.stringify
-        body: {
-          processName,
-          category,
-          startDate,
-          tasks: tasks.map(t => ({
-            name: t.name,
-            days: parseInt(t.days, 10),
-          })),
-        },
-      })
-      // clear & refresh the list
-      setProcessName('')
-      setCategory('')
-      setStartDate('')
-      setTasks([{ name: '', days: '' }])
-      router.refresh()
+      if (onSubmit) {
+                await onSubmit(formVals)
+              } else {
+                await authFetch('/progress', {
+                  method: 'POST',
+                  body: {
+                    processName,
+                    category,
+                    startDate,
+                    tasks: tasks.map(t => ({
+                      name: t.name,
+                      days: parseInt(t.days, 10),
+                    })),
+                  },
+                })
+                // reset after create
+                setProcessName('')
+                setCategory('')
+                setStartDate('')
+                setTasks([{ name: '', days: '' }])
+                router.refresh()
+              }
     } catch (err: any) {
       setError(err.message || 'Failed to create progress')
     }
@@ -132,7 +159,7 @@ export default function ProcessForm() {
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >
-        Create Progress
+        {onSubmit ? 'Update Progress' : 'Create Progress'}
       </button>
     </form>
   )
