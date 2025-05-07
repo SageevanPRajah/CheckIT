@@ -1,10 +1,15 @@
 package com.roboticgen.nexus.service;
 
+import com.roboticgen.nexus.dto.CommentResponse;
 import com.roboticgen.nexus.dto.PostRequest;
 import com.roboticgen.nexus.dto.PostResponse;
 import com.roboticgen.nexus.exception.PostNotFoundException;
 import com.roboticgen.nexus.model.Post;
+import com.roboticgen.nexus.model.PostLike;
 import com.roboticgen.nexus.model.User;
+import com.roboticgen.nexus.model.Comment;
+import com.roboticgen.nexus.repository.CommentRepository;
+import com.roboticgen.nexus.repository.LikeRepository;
 import com.roboticgen.nexus.repository.PostRepository;
 import com.roboticgen.nexus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +28,10 @@ public class PostService {
     private final UserRepository userRepository;
     // inject your file‐storage component:
     private final FileStorageService fileStorageService;
+
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
+
 
     public PostResponse createPost(PostRequest request) {
         User instructor = getCurrentInstructor();
@@ -99,6 +108,26 @@ public class PostService {
                     "Current user is not an instructor"));
     }
 
+    public List<PostResponse> getAllPosts() {
+        return postRepository.findAll()
+          .stream()
+          .map(this::enrichAndMap)
+          .collect(Collectors.toList());
+      }
+      
+      public void likePost(Long postId) {
+        User me = getCurrentInstructor();             // or getCurrentUser()
+        Post post = postRepository.findById(postId)
+          .orElseThrow(() -> new PostNotFoundException(postId));
+      
+        if (!likeRepository.existsByPostIdAndUser(postId, me)) {
+          PostLike like = new PostLike();
+          like.setPost(post);
+          like.setUser(me);
+          likeRepository.save(like);
+        }
+      }
+      
     private PostResponse mapToResponse(Post post) {
         PostResponse r = new PostResponse();
         r.setId(post.getId());
@@ -109,4 +138,28 @@ public class PostService {
         r.setMediaUrls(post.getMediaUrls());
         return r;
     }
+
+    private PostResponse enrichAndMap(Post post) {
+        PostResponse dto = mapToResponse(post);
+      
+        // --- comments ---
+        List<Comment> raw = commentRepository.findByPostOrderByCreatedAtAsc(post);
+        List<CommentResponse> comments = raw.stream().map(c -> {
+          CommentResponse cr = new CommentResponse();
+          cr.setId(c.getId());
+          cr.setContent(c.getContent());
+          cr.setAuthorId(c.getAuthor().getId());
+          cr.setAuthorUsername(c.getAuthor().getUsername());
+          cr.setCreatedAt(c.getCreatedAt());
+          cr.setUpdatedAt(c.getUpdatedAt());
+          return cr;
+        }).collect(Collectors.toList());
+        dto.setComments(comments);
+      
+        // --- like count ---
+        dto.setLikeCount(likeRepository.countByPostId(post.getId()));
+        return dto;
+      }
+      
+    
 }

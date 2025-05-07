@@ -21,7 +21,7 @@ export default function CommentSection({
 }) {
   const [comments, setComments] = useState<Comment[]>([])
   const [newContent, setNewContent] = useState('')
-  const [me, setMe] = useState<{ id: number; username: string; avatarUrl?: string } | null>(null)
+  const [me, setMe] = useState<{ id: number; username: string } | null>(null)
 
   // load comments + current user
   useEffect(() => {
@@ -75,11 +75,10 @@ export default function CommentSection({
       {/* input bar like FB */}
       {me && (
         <div className="flex items-center space-x-3 pt-2 border-t">
-          <img
-            src={me.avatarUrl ?? '/images/default-avatar.png'}
-            alt={me.username}
-            className="w-8 h-8 rounded-full"
-          />
+          {/* use first letter of username as avatar */}
+          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white">
+            {me.username.charAt(0).toUpperCase()}
+          </div>
           <div className="relative flex-1">
             <input
               type="text"

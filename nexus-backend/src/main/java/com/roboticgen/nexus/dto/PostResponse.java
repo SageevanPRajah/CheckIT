@@ -11,4 +11,7 @@ public class PostResponse {
     private Long instructorId;
     private String instructorUsername;
     private List<String> mediaUrls;
+
+    private List<CommentResponse> comments;
+    private long likeCount;
 }

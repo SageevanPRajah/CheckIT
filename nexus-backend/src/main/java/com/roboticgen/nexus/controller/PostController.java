@@ -65,4 +65,22 @@ public class PostController {
         postService.deletePost(id);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * Public feed: returns every post in the system,
+     * with its comments and current like‐count.
+     */
+    @GetMapping("/feed")
+    public ResponseEntity<List<PostResponse>> getFeed() {
+        return ResponseEntity.ok(postService.getAllPosts());
+    }
+
+    /**
+     * Like a post.
+     */
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> likePost(@PathVariable Long id) {
+        postService.likePost(id);
+        return ResponseEntity.ok().build();
+    }
 }
