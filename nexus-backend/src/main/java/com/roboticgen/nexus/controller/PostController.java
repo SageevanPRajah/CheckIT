@@ -4,13 +4,20 @@ import com.roboticgen.nexus.dto.PostRequest;
 import com.roboticgen.nexus.dto.PostResponse;
 import com.roboticgen.nexus.service.PostService;
 import lombok.RequiredArgsConstructor;
+
+import com.roboticgen.nexus.model.User;
+import com.roboticgen.nexus.repository.UserRepository;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -18,6 +25,7 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
+    private final UserRepository userRepository;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('INSTRUCTOR')")
@@ -82,5 +90,22 @@ public class PostController {
     public ResponseEntity<Void> likePost(@PathVariable Long id) {
         postService.likePost(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user/{username}")
+    public ResponseEntity<List<PostResponse>> getPostsByUsername(@PathVariable String username) {
+        User user = userRepository
+            .findByUsernameIgnoreCase(username)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No such user: " + username
+            ));
+
+        List<PostResponse> all = postService.getAllPosts();
+        List<PostResponse> filtered = all.stream()
+            .filter(p -> p.getInstructorId().equals(user.getId()))
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(filtered);
     }
 }
