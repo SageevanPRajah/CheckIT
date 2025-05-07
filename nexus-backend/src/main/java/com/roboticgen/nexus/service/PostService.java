@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,9 @@ public class PostService {
 
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
+
+    private Instant createdAt;
+    private Instant updatedAt;
 
 
     public PostResponse createPost(PostRequest request) {
@@ -136,6 +140,8 @@ public class PostService {
         r.setInstructorId(post.getInstructor().getId());
         r.setInstructorUsername(post.getInstructor().getUsername());
         r.setMediaUrls(post.getMediaUrls());
+        r.setCreatedAt(post.getCreatedAt());
+        r.setUpdatedAt(post.getUpdatedAt());    
         return r;
     }
 
@@ -158,6 +164,10 @@ public class PostService {
       
         // --- like count ---
         dto.setLikeCount(likeRepository.countByPostId(post.getId()));
+
+        // ← here: stamp in your timestamps
+        dto.setCreatedAt(post.getCreatedAt());
+        dto.setUpdatedAt(post.getUpdatedAt());
         return dto;
       }
       

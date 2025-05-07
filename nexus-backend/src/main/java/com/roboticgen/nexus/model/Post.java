@@ -2,7 +2,12 @@ package com.roboticgen.nexus.model;
 
 import lombok.*;
 import jakarta.persistence.*;
+
+import java.time.Instant;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Data
 @Builder
@@ -36,4 +41,11 @@ public class Post {
     )
     @Column(name = "media_url")
     private List<String> mediaUrls;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Instant createdAt;
+  
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
