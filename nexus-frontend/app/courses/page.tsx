@@ -64,25 +64,7 @@ export default function CoursesPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <header className="bg-white shadow">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                    <div className="flex items-center">
-                        <Image src="/images/logo.png" alt="RoboticGen Logo" width={150} height={40} />
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <UserProfile username={username} />
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors"
-                        >
-                            <LogOut size={18} />
-                            <span>Logout</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
-
+            
             {/* Main Content */}
             <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex justify-between items-center mb-6">

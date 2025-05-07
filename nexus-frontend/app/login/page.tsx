@@ -21,7 +21,7 @@ export default function LoginPage() {
             // Save tokens in localStorage
             setTokens(data.access_token, data.refresh_token)
             // Navigate to courses
-            router.push("/courses")
+            router.push("/feed")
         } catch (err: any) {
             setError("Invalid username or password")
         }
