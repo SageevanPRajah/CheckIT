@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { authFetch } from "@/lib/api"
 
 interface Post {
+  createdAt: string
+  likeCount: number
+  comments: never[]
+  instructorId(instructorId: any): number
   id: number
   title: string
   description: string
