@@ -13,8 +13,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -113,23 +115,37 @@ public class ProgressService {
     }
 
     private ProgressResponse mapToResponse(Progress p) {
-        ProgressResponse dto = new ProgressResponse();
-        dto.setId(p.getId());
-        dto.setProcessName(p.getProcessName());
-        dto.setCategory(p.getCategory());
-        dto.setStartDate(p.getStartDate());
-        dto.setTasks(
-            p.getTasks().stream().map(task -> {
-                TaskResponse tr = new TaskResponse();
-                tr.setId(task.getId());
-                tr.setName(task.getName());
-                tr.setDays(task.getDays());
-                tr.setCompleted(task.isCompleted());
-                return tr;
-            }).collect(Collectors.toList())
-        );
-        return dto;
+    ProgressResponse dto = new ProgressResponse();
+    dto.setId(p.getId());
+    dto.setProcessName(p.getProcessName());
+    dto.setCategory(p.getCategory());
+    dto.setStartDate(p.getStartDate());
+
+    // We'll walk a cursor through the calendar
+    LocalDate cursor = p.getStartDate();
+    LocalDate today  = LocalDate.now();  // or inject Clock for testability
+
+    List<TaskResponse> taskDtos = new ArrayList<>();
+    for (Task task : p.getTasks()) {
+        TaskResponse tr = new TaskResponse();
+        tr.setId(task.getId());
+        tr.setName(task.getName());
+        tr.setDays(task.getDays());
+
+        // Calculate when this task “ends”
+        LocalDate endDate = cursor.plusDays(task.getDays());
+        // If today is before endDate → still pending (completed=false)
+        // Once today >= endDate → mark completed
+        tr.setCompleted(! today.isBefore(endDate));
+
+        taskDtos.add(tr);
+        // Advance cursor so next task starts the day after this one ends
+        cursor = endDate;
     }
+
+    dto.setTasks(taskDtos);
+    return dto;
+}
 
     private User getCurrentUser() {
         String username = ((UserDetails) SecurityContextHolder
