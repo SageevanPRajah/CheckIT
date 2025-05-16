@@ -5,6 +5,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { loginRequest, setTokens } from "@/lib/api"
 import Image from "next/image"
+import { FaGoogle } from "react-icons/fa";
 
 export default function LoginPage() {
     const router = useRouter()
@@ -84,6 +85,21 @@ export default function LoginPage() {
                         >
                             Log in
                         </button>
+                    </div>
+                    <div className="pt-2">
+                        <button
+                            type="button"
+                            className="w-full bg-white text-gray-800 py-3 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <FaGoogle className="text-lg" />
+                            Log in with Google
+                        </button>
+                    </div>
+                    <div className="text-center text-sm text-gray-600">
+                        don't have an account?{" "}
+                        <a href="/signup" className="text-cyan-500 hover:underline">
+                        Sign up
+                        </a>
                     </div>
                 </form>
             </div>
